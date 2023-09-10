@@ -1,4 +1,4 @@
-![Sysmon](./sysmon.jpg)
+![Sysmon](https://github.com/KolimaH4x/Sysmon-Automation/blob/main/media/sysmon.jpg)
 
 # Sysmon Automation
 Automate management and maintenance of the Sysmon tool on your Windows systems with PowerShell. \
