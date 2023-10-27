@@ -92,7 +92,7 @@ $sysmon_configuration_file_hash = (Get-FileHash -algorithm SHA256 -Path ($sysmon
 $architecture = (Get-CimInstance Win32_operatingsystem).OSArchitecture
 
 # Check if Sysmon is installed
-if ($architecture -eq '64 bit') {
+if ($architecture -eq '64 bit' -or $architecture -eq '64-bit') {
     $service = get-service -name Sysmon64 -ErrorAction SilentlyContinue
     $exe = $shared_sysmon_folder + "\" + "Sysmon64.exe"
 } else {
