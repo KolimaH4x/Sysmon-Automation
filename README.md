@@ -2,7 +2,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/KolimaH4x/Sysmon-Automation">
-    <img src="media/logo.png" alt="Logo" width="150" height="150">
+    <img src="media/logo.png" alt="Logo" width="110" height="110">
   </a>
 
   <h3 align="center">Sysmon Automation</h3>
