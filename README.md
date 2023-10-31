@@ -1,5 +1,28 @@
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <a href="https://github.com/KolimaH4x/Sysmon-Automation">
+    <img src="media/logo.png" alt="Logo" width="80" height="80">
+  </a>
+
+  <h3 align="center">Sysmon Automation</h3>
+
+  <p align="center">
+    A PowerShell script which helps you in Sysmon Management!
+    <br />
+    <a href="https://github.com/KolimaH4x/Sysmon-Automation/README.md"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/KolimaH4x/Sysmon-Automation/issues">Report Bug</a>
+    ·
+    <a href="(https://github.com/KolimaH4x/Sysmon-Automation/issues">Request Feature</a>
+  </p>
+</div>
+
+
 ![Sysmon](https://github.com/KolimaH4x/Sysmon-Automation/blob/main/media/sysmon.jpg)
 
+![License](https://img.shields.io/badge/License-MIT-greeen)
 ![Version](https://img.shields.io/badge/Version-1.0.0-blue)
 
 # Sysmon Automation
