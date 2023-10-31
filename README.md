@@ -2,7 +2,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/KolimaH4x/Sysmon-Automation">
-    <img src="media/logo.png" alt="Logo" width="80" height="80">
+    <img src="media/logo.png" alt="Logo" width="150" height="150">
   </a>
 
   <h3 align="center">Sysmon Automation</h3>
@@ -15,7 +15,7 @@
     <br />
     <a href="https://github.com/KolimaH4x/Sysmon-Automation/issues">Report Bug</a>
     ·
-    <a href="(https://github.com/KolimaH4x/Sysmon-Automation/issues">Request Feature</a>
+    <a href="https://github.com/KolimaH4x/Sysmon-Automation/issues">Request Feature</a>
   </p>
 </div>
 
