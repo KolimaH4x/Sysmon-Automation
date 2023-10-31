@@ -1,5 +1,7 @@
 ![Sysmon](https://github.com/KolimaH4x/Sysmon-Automation/blob/main/media/sysmon.jpg)
 
+![Version](https://img.shields.io/badge/Version-1.0.0-blue)
+
 # Sysmon Automation
 Automate management and maintenance of the Sysmon tool on your Windows systems with PowerShell. \
 This script helps sysadmins and cyber secuirty analysts deploy and maintain the Sysmon monitoring tool from Sysinternals. \
