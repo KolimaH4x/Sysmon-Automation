@@ -15,7 +15,8 @@
     <a href="https://github.com/KolimaH4x/Sysmon-Automation"><img src="https://img.shields.io/github/downloads/KolimaH4x/Sysmon-Automation/total.svg?style=for-the-badge"></a>
     <a href="https://github.com/KolimaH4x/Sysmon-Automation"><img src="https://img.shields.io/github/stars/KolimaH4x/Sysmon-Automation?color=yellow&style=for-the-badge"></a>
     <a href="https://www.paypal.me/KolimaH4x"><img src="https://img.shields.io/badge/$-donate-ff69b4.svg?style=for-the-badge"></a>
-    </p>
+  </p>
+  <p>
     <a href="https://github.com/KolimaH4x/Sysmon-Automation/issues">Report Bug</a>
     ·
     <a href="https://github.com/KolimaH4x/Sysmon-Automation/issues">Request Feature</a>
