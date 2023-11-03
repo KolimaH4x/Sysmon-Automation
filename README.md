@@ -1,5 +1,7 @@
-![License](https://img.shields.io/badge/License-MIT-greeen)
-![Version](https://img.shields.io/badge/Version-1.0.0-blue)
+![License](https://img.shields.io/github/license/KolimaH4x/Sysmon-Automation)
+![Release](https://img.shields.io/github/release/KolimaH4x/Sysmon-Automation.svg)
+![Downloads](https://img.shields.io/github/downloads/KolimaH4x/Sysmon-Automation/total.svg)
+![Stars](https://img.shields.io/github/stars/KolimaH4x/Sysmon-Automation?color=yellow)
 
 <!-- PROJECT LOGO -->
 <br />
@@ -26,35 +28,56 @@
 
 Automate management and maintenance of the Sysmon tool on your Windows systems with PowerShell. \
 This script helps sysadmins and cyber secuirty analysts deploy and maintain the Sysmon monitoring tool from Sysinternals. \
-Script distribution must be done via group policy, Sysmon binaries must be placed in a network share or in the sysvol volume of the domain controller.
+Script distribution must be done via group policy, The script automatically download the Sysmon binaries directly from the official Sysinternals web site and the configuration file from the SwiftOnSecurity template.
 
 ### Features
+* Automatic download of Sysmon executables and configuration file.
 * Install Sysmon if it is not installed.
-* Upgrade Sysmon if the version does not match the updated version.
-* Updates Sysmon configuration in case of changes
+* Upgrade Sysmon if the installed version does not match the latest version.
+* Updates Sysmon configuration.
 * Automatic control of system architecture (32/64 bit).
-* Script activity logging and logrotate function.
+* Script activity logging.
 
-### Remote Loggin
+### Monitor script activity with SIEM
+It is possible to monitor the script's activities centrally through monitoring systems such as SIEM.\
+The script automatically creates a registry called "Sysmon Automation", the logs will be recorded within the Application section of the Event Viewer.
 
-### Local Logging
+### Testing
+
+Tested on Windows 10 and Windows Server 2016 and later. \
+Problems may occur in the following cases:
+* Outdated versions such as Windows Server 2012/2012 R2 (installation fail).
+* Outdated versions such as Windows Server 2008/2008 R2 and earlier (system crash).
+* If the OS architecture is 64-bit and the 32-bit version (Sysmon.exe) is already installed.
 
 <!-- GETTING STARTED -->
 ## Getting Started
 ### Script Settings
-Local Logging script:
+Modify sysmon-automation.ps1 so that $SysmonConfigURL points to a URL or path reachable by all hosts (e.g. Sysvol/Netlogon folder) containing the configuration file. By default, the script downloads the SwiftOnSecurity template.
 ```PowerShell
-# Change the path according to your environment
-$SharedSysmonFolder = '\\PATH\Symon'
+# Change the configuration file source as needed
+$SysmonConfigURL = "https://raw.githubusercontent.com/SwiftOnSecurity/sysmon-config/master/sysmonconfig-export.xml"
 ```
 
-### Testing
-Tested on Windows 10 and Windows server 2016 and later.
-NB:
+### GPO Settings
+
+1. Open the *Group Policy Management Console* (`gpmc.msc`), create a new GPO, and link it to an Organizational Unit with computers you want to assign the task to;
+2. Go to User *Configuration* -> *Preferences* -> *Control Panel Setting*s -> *Scheduled Tasks*;
+3. Create a new scheduled task: *New* -> *Scheduled task (At least Windows 7)*;
+4. You will see a form similar to the standard Windows Scheduler task configuration window. Configure the settings of your task;
+5. On the General tab, set *Action* = `Create`, enter the task name. Change the user to **NT AUTHORITY\System**. Set it to Run whether user is logged on or not, then set **Run with highest privileges**.
+6. Navigate to the Triggers tab. Specify the date and time when you want to run the task. Select *New* -> *Begin the task On a schedule* -> *Daily*, and specify the time to start the task;
+7. On the Actions tab, specify a command or a script you want to run using the Task Scheduler. Configure the following task options:\
+Action: Start a program\
+Program/Script: `powershell.exe`\
+Add Arguments: `-ExecutionPolicy Bypass -File \\yourdomain.internal\Netlogon\Sysmon\sysmon-automation.ps1` (change the path according to your infrastructure)
+8.  Navigate to the Settings tab. Check Run task as soon as possible after a scheduled start is missed. Then click OK to save the scheduled task.
+9. Open the Task Scheduler (`taskschd.msc`) and make sure that a new task has appeared in the Task Scheduler Library. Make sure that it is run according to the schedule.
 
 
+<!-- LINKS -->
 ## Links 🌐
-* Sysmon: https://learn.microsoft.com/it-it/sysinternals/downloads/sysmon
+* Sysmon: https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon
 
 * Sysmon Configuration: https://github.com/SwiftOnSecurity/sysmon-config
 
