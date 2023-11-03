@@ -1,8 +1,3 @@
-![License](https://img.shields.io/github/license/KolimaH4x/Sysmon-Automation)
-![Release](https://img.shields.io/github/release/KolimaH4x/Sysmon-Automation.svg)
-![Downloads](https://img.shields.io/github/downloads/KolimaH4x/Sysmon-Automation/total.svg)
-![Stars](https://img.shields.io/github/stars/KolimaH4x/Sysmon-Automation?color=yellow)
-
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
@@ -14,8 +9,13 @@
 
   <p align="center">
     A PowerShell script which helps you in Sysmon Management!
-    <br/>
-    <br/>
+    <p align="center">
+    <a href="https://github.com/KolimaH4x/Sysmon-Automation/blob/main/LICENSE"><img src="https://img.shields.io/github/license/KolimaH4x/Sysmon-Automation?style=for-the-badge" alt="Gitter">     </a>
+    <a href="https://github.com/KolimaH4x/Sysmon-Automation/releases"><img src="https://img.shields.io/github/v/release/KolimaH4x/Sysmon-Automation?style=for-the-badge"></a>
+    <a href="https://github.com/KolimaH4x/Sysmon-Automation"><img src="https://img.shields.io/github/downloads/KolimaH4x/Sysmon-Automation/total.svg?style=for-the-badge"></a>
+    <a href="https://github.com/KolimaH4x/Sysmon-Automation"><img src="https://img.shields.io/github/stars/KolimaH4x/Sysmon-Automation?color=yellow&style=for-the-badge"></a>
+    <a href="https://www.paypal.me/KolimaH4x"><img src="https://img.shields.io/badge/$-donate-ff69b4.svg?style=for-the-badge"></a>
+    </p>
     <a href="https://github.com/KolimaH4x/Sysmon-Automation/issues">Report Bug</a>
     ·
     <a href="https://github.com/KolimaH4x/Sysmon-Automation/issues">Request Feature</a>
