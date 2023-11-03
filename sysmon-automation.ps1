@@ -1,28 +1,23 @@
 <# PS ScriptInfo
 
-.VERSION: 1.0
+.VERSION: 1.0.0
 
 .AUTHOR: KolimaH4x
 
 .DESCRIPTION
-   This PowerShell script will install Sysmon if it is not installed, upgrade it if the version does not match the updated version or update the Sysmon configuration in case of changes.
+   This PowerShell script will install Sysmon if it is not installed, upgrade it if the version does not match the updated version
+   or update the Sysmon configuration in case of changes. The script automatically download the Sysmon binaries directly from the official 
+   Sysinternals URL and the configuration file from the SwiftOnSecurity template.
 .FUNCTIONALITY
    Automate Sysmon Management
 .NOTES
-   1. The script requires a shared folder or in the sysvol volume of the domain controller in which the updated Sysmon binaries will be placed. Make sure sysmon.exe and sysmon64.exe are placed directly into the folder.
-   2. The configuration file must be placed in the same folder
-   3. The script must be executed with the highest privileges (e.g. NT Authority\System)
+   1. The script must be executed with the highest privileges (e.g. NT Authority\System)
 #>
 
-# ----------- VARIABLES ----------- #
+# ----------- SYSMON CONFIGURATION FILE ----------- #
 
-# Change the path according to your environment
-$shared_sysmon_folder = '\\PATH\Symon'
-# Below is a local path that this script can log and track sysmon
-$local_sysmon_folder = 'C:\Windows\Sysmon'
-$max_log_file_size = 10 # This is in KB
-
-
+# Change the configuration file source as needed
+$SysmonConfigURL = "https://raw.githubusercontent.com/SwiftOnSecurity/sysmon-config/master/sysmonconfig-export.xml"
 
 ##############################################
 #                                            #
@@ -30,119 +25,162 @@ $max_log_file_size = 10 # This is in KB
 #                                            #
 ##############################################
 
-# Create local path if it does not exist
-if (!(Test-Path -Path $local_sysmon_folder)){
-    New-Item -ItemType Directory -Force -Path $local_sysmon_folder
+# ----------- APPLICATION LOG ----------- #
+
+# Create new Application log source if it does not exist
+
+$Source = [System.Diagnostics.EventLog]::SourceExists("Sysmon Automation")
+if ($Source -ne $true) {
+    New-EventLog -LogName "Application" -Source "Sysmon Automation"
 }
-
-# ----------- LOG FUNCTION ----------- #
-
-$log_file = $local_sysmon_folder + "\" + "Sysmon_Manager.log"
-$log_file_backup = $local_sysmon_folder + "\" + "Sysmon_Manager.old"
-
-function Write-Log {
-    [CmdletBinding()]
-    param(
-    [Parameter()]
-    [ValidateNotNullOrEmpty()]
-    [string]$Message,
-    [Parameter()]
-    [ValidateNotNullOrEmpty()]
-    [ValidateSet('Information','Warning','Error')]
-    [string]$Severity = 'Information')
-    [pscustomobject]@{
-    Time = (Get-Date -Format "dd/MM/yyyy HH:mm:ss")
-    Message = $Message
-    Severity = $Severity
-    } | Out-File -FilePath $log_file -Append
-   } 
-
-# Create log file if it does not exist and Logrotate
-if (!(Test-Path -Path $log_file)){
-    New-Item -ItemType File -Path $local_sysmon_folder -Name Sysmon_Manager.log
-    Write-Log -Message "Script startup." -Severity Information
-   } else {
-    Write-Log -Message "Script startup." -Severity Information
-    Write-Log "Prior log file found" -Severity Information
-    $log_size = (Get-Item $log_file).length/1KB
-    # If log size is greater than or equal to $max_log_file_size, rotate the file
-    if($log_size -ge $max_log_file_size){
-        Write-Log "Rotating log file" -Severity Information
-        if (Test-Path -Path $log_file_backup){
-            Remove-Item -Path $log_file_backup -Force
-            Rename-Item -Path $log_file $log_file_backup
-        } else {
-            Rename-Item -Path $log_file $log_file_backup
-           }   
-        }
-    }
 
 # ----------- SCRIPT ----------- #
 
-if (!(Test-Path -Path $shared_sysmon_folder)) {
-    Write-Log "Shared Sysmon folder does not exist or is not reachable." -Severity Error
+Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50001 -EntryType Information -Message "Script startup."
+
+# Create Sysmon Temp directory for downloads
+
+$TempDir = [System.Environment]::GetEnvironmentVariable('TEMP','Machine')
+$SysmonTempDir = "$TempDir\Sysmon"
+if (!(Test-Path $SysmonTempDir)) {
+    New-Item -ItemType Directory -Force -Path $SysmonTempDir
+}
+
+# Sysmon temp directory check
+
+if (!(Test-Path -Path $SysmonTempDir)) {
+    Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50020 -EntryType Error -Message "Temp Sysmon folder does not exist."
     exit
 }
 
-# Check Sysmon configuration file hash
-$sysmon_configuration = $shared_sysmon_folder + "\" + "sysmonconfig-export.xml"
-$sysmon_configuration_file_hash = (Get-FileHash -algorithm SHA256 -Path ($sysmon_configuration)).Hash
+# Download and extracion Sysmon binaries and configuration file
 
-# Get OS architecture (32-bit / 64-bit)
-$architecture = (Get-CimInstance Win32_operatingsystem).OSArchitecture
+# PowerShell uses TLS 1.0 when connecting to websites by default but the site you are making a request to requires TLS 1.1 or TLS 1.2 or SSLv3
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls, [Net.SecurityProtocolType]::Tls11, [Net.SecurityProtocolType]::Tls12, [Net.SecurityProtocolType]::Ssl3
+[Net.ServicePointManager]::SecurityProtocol = "Tls, Tls11, Tls12, Ssl3"
+
+try {
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri "https://download.sysinternals.com/files/Sysmon.zip" -OutFile "$SysmonTempDir\Sysmon.zip"
+}
+catch {
+    Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50021 -EntryType Error -Message "https://download.sysinternals.com is unreachable."
+    exit
+}
+
+try {
+    Add-Type -Assembly System.IO.Compression.FileSystem
+    $SysmonZipFile = [IO.Compression.ZipFile]::OpenRead("$SysmonTempDir\Sysmon.zip")
+    $SysmonZipFile.Entries | Where-Object {($_.Name -eq "Sysmon.exe" -or $_.Name -eq "Sysmon64.exe")} | ForEach-Object {[System.IO.Compression.ZipFileExtensions]::ExtractToFile($_, "$SysmonTempDir\$($_.Name)", $true)}
+    $SysmonZipFile.Dispose()
+    Remove-Item "$SysmonTempDir\Sysmon.zip" -Recurse -Force -ErrorAction SilentlyContinue
+}
+catch {
+    Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50022 -EntryType Error -Message "Error encountered in Sysmon archive extraction."
+    exit
+}
+
+try {
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri $SysmonConfigURL -OutFile "$SysmonTempDir\sysmonconfig-export.xml"
+}
+catch {
+    Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50026 -EntryType Error -Message "https://raw.githubusercontent.com/SwiftOnSecurity is unreachable."
+}
+
+# Sysmon Services list
+$SysmonServices = @("Sysmon","Sysmon64")
+
+# Check Sysmon configuration file hash
+$SysmonConfiguration = "$SysmonTempDir\sysmonconfig-export.xml"
+$SysmonConfigFileHash = (Get-FileHash -algorithm SHA256 -Path ($SysmonConfiguration)).Hash
+
+# Get OS Architecture (32-bit / 64-bit)
+$Architecture = (Get-CimInstance Win32_operatingsystem).OSArchitecture
+
+Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50002 -EntryType Information -Message "Host OS architecture: $Architecture."
 
 # Check if Sysmon is installed
-if ($architecture -eq '64 bit' -or $architecture -eq '64-bit') {
-    $service = get-service -name Sysmon64 -ErrorAction SilentlyContinue
-    $exe = $shared_sysmon_folder + "\" + "Sysmon64.exe"
+if ($Architecture -eq '64 bit' -or $Architecture -eq '64-bit') {
+    $Service = get-Service -name Sysmon64 -ErrorAction SilentlyContinue
+    $Exe = "$SysmonTempDir\Sysmon64.exe"
 } else {
-    $service = get-service -name Sysmon -ErrorAction SilentlyContinue
-    $exe = $shared_sysmon_folder + "\" + "Sysmon.exe"
+    $Service = get-Service -name Sysmon -ErrorAction SilentlyContinue
+    $Exe = "$SysmonTempDir\Sysmon.exe"
 }
 
 # New Sysmon versions
-$sysmon_current_version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($exe).FileVersion
+$SysmonCurrentVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($Exe).FileVersion
+
+Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50003 -EntryType Information -Message "Current Sysmon version: $SysmonCurrentVersion"
 
 function Install-Sysmon {
+    Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50004 -EntryType Information -Message "Installing Sysmon version: $SysmonCurrentVersion"
     # The command below installs Sysmon
-    & $exe "-accepteula" "-i" $sysmon_configuration
+    & $Exe "-accepteula" "-i" $SysmonConfiguration
+    # Sysmon installation check
+    $SysmonSrv = Get-Service | Where-Object {$_.DisplayName -in $SysmonServices} | Select-Object DisplayName, Status
+    if ($null -ne $SysmonSrv) {
+        $SysmonSrvName = $SysmonSrv.DisplayName
+        $SysmonSrvStatus = $SysmonSrv.Status
+        if ($SysmonSrv.Status -eq "Running") {
+            Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50005 -EntryType Information -Message "Sysmon version $SysmonCurrentVersion installed. Current $SysmonSrvName service status: $SysmonSrvStatus"
+        } else {
+            Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50023 -EntryType Error -Message "Current $SysmonSrvName service status: $SysmonSrvStatus."
+            exit
+        }
+    } else {
+        Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50024 -EntryType Error -Message "Sysmon service not found."
+        exit
+    }
 }
 
 function Remove-Sysmon {
+    Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50006 -EntryType Information -Message "Uninstalling Sysmon."
     # The command below uninstalls Sysmon
-    & $exe "-accepteula" "-u"
+    & $Exe "-accepteula" "-u"
+    # Sysmon uninstallation check
+    $SysmonSrv = Get-Service | Where-Object {$_.DisplayName -in $SysmonServices} | Select-Object DisplayName, Status
+    if ($null -eq $SysmonSrv) {
+        Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50007 -EntryType Information -Message "Sysmon uninstalled correctly."
+    } else {
+        Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50025 -EntryType Error -Message "Sysmon uninstallation failed. A reboot may be required."
+        exit
+    }
 }
 
 function Update-SysmonConfig {
+    Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50008 -EntryType Information -Message "New sysmon configuration found, updating."
     # The command below updates Sysmon's configuration
-    & $exe "-accepteula" "-c" $sysmon_configuration
+    & $Exe "-accepteula" "-c" $SysmonConfiguration
 }
 
 # Install Sysmon if it is not installed
-if ($null -eq $service) {
+if ($null -eq $Service) {
+    Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50009 -EntryType Information -Message "Sysmon not found on host, installing."
     Install-Sysmon
-    Write-Log "Installing Sysmon." -Severity Information
 } else {
-    Write-Log "Sysmon is installed." -Severity Information
     # If Sysmon is installed, get the installed version
-    $sysmon_path = (Get-cimInstance -ClassName win32_service -Filter 'Name like "%Sysmon%"').PathName
-    $sysmon_installed_version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($sysmon_path).FileVersion
-}
-
-# If Sysmon is installed, check if the version needs upgraded
-if ($Sysmon_installed_version -ne $sysmon_current_version) {
-    Remove-Sysmon
-    Install-Sysmon
-    Write-Log "Sysmon version does not match - Reinstalling." -Severity Warning
-} else {
-    Write-Log "Sysmon version matches shared repository version." -Severity Information
-    # Check if Sysmon's configuration needs updated
-    # Not necessary if Sysmon reinstalled due to version mismatch
-    $installed_sysmon_configuration_file_hash = (& $exe "-c" | Select-String '(?!SHA256=)([a-fA-F0-9]{64})$').Matches.Value
-    if ($installed_sysmon_configuration_file_hash -ne $sysmon_configuration_file_hash){
-        Update-SysmonConfig
-        Write-Log "Sysmon configuration out of sync - Updating." -Severity Warning
+    $SysmonPath = (Get-cimInstance -ClassName win32_Service -Filter 'Name like "%Sysmon%"').PathName
+    $SysmonInstalledVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($SysmonPath).FileVersion
+    Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50010 -EntryType Information -Message "Sysmon version $SysmonInstalledVersion installed on host."
+    # If Sysmon is installed, check if the version needs upgraded
+    if ($SysmonInstalledVersion -ne $SysmonCurrentVersion) {
+        Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50040 -EntryType Warning -Message "Sysmon version installed is not up to date, reinstalling."
+        Remove-Sysmon
+        Install-Sysmon
     } else {
-        Write-Log "Sysmon configuration matches current configuration." -Severity Information
+        Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50011 -EntryType Information -Message "Sysmon is updated to the latest version."
+        # Check if Sysmon's configuration needs updated
+        # Not necessary if Sysmon reinstalled due to version mismatch
+        $InstalledSysmonConfigFileHash = (& $Exe "-c" | Select-String '(?!SHA256=)([a-fA-F0-9]{64})$').Matches.Value
+        if ($InstalledSysmonConfigFileHash -ne $SysmonConfigFileHash){
+            Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50041 -EntryType Warning -Message "Sysmon configuration is not up to date."
+            Update-SysmonConfig
+        } else {
+            Write-EventLog -LogName "Application" -Source "Sysmon Automation" -EventId 50012 -EntryType Information -Message "Sysmon configuration is updated to the latest version."
+        }
     }
 }
+
+Remove-Item $SysmonTempDir -Recurse -Force -ErrorAction SilentlyContinue
