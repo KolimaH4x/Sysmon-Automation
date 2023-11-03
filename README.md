@@ -10,7 +10,7 @@
   <p align="center">
     A PowerShell script which helps you in Sysmon Management!
     <p align="center">
-    <a href="https://github.com/KolimaH4x/Sysmon-Automation/blob/main/LICENSE"><img src="https://img.shields.io/github/license/KolimaH4x/Sysmon-Automation?style=for-the-badge" alt="Gitter">     </a>
+    <a href="https://github.com/KolimaH4x/Sysmon-Automation/blob/main/LICENSE"><img src="https://img.shields.io/github/license/KolimaH4x/Sysmon-Automation?style=for-the-badge" alt="Gitter"></a>
     <a href="https://github.com/KolimaH4x/Sysmon-Automation/releases"><img src="https://img.shields.io/github/v/release/KolimaH4x/Sysmon-Automation?style=for-the-badge"></a>
     <a href="https://github.com/KolimaH4x/Sysmon-Automation"><img src="https://img.shields.io/github/downloads/KolimaH4x/Sysmon-Automation/total.svg?style=for-the-badge"></a>
     <a href="https://github.com/KolimaH4x/Sysmon-Automation"><img src="https://img.shields.io/github/stars/KolimaH4x/Sysmon-Automation?color=yellow&style=for-the-badge"></a>
